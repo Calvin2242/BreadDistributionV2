@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPKI Bakery</title>
+<style>
+:root{--bg:#f2f5f7;--card:#fff;--ink:#14213d;--mute:#5d6b82;--line:#d8e0e8;--gold:#e9a820;--goldink:#3b2a00;--teal:#17806f;--red:#c0392b}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1626;--card:#17233a;--ink:#eef2f8;--mute:#9aa8c0;--line:#2b3a57;--gold:#f0b43a;--goldink:#2a1d00;--teal:#3cc4ad;--red:#ff7a6b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 ui-rounded,"Segoe UI",system-ui,sans-serif;padding-bottom:40px}
+header{background:var(--ink);color:var(--bg);padding:14px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+@media (prefers-color-scheme:dark){header{background:#050a14;color:#eef2f8}}
+h1{font-size:1.3rem;margin:0}
+header input{font:inherit;padding:6px 8px;border-radius:8px;border:0}
+nav{display:flex;position:sticky;top:0;background:var(--bg);border-bottom:2px solid var(--line);z-index:5}
+nav button{flex:1;padding:14px 2px;font:inherit;font-size:.88rem;font-weight:700;border:0;background:none;color:var(--mute);border-bottom:4px solid transparent;margin-bottom:-2px;cursor:pointer}
+nav button.on{color:var(--ink);border-color:var(--gold)}
+main{max-width:720px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.bread{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.bread.on{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold)}
+.bread:disabled{opacity:.45;cursor:not-allowed}
+.bread b{display:block;font-size:1.1rem}
+.bread .left{font-size:1.8rem;font-weight:800;line-height:1.1;margin-top:6px}
+.bread small{color:var(--mute)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+label{display:block;font-weight:700;margin:12px 0 6px}
+input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:10px;align-items:center}
+.qty button{width:56px;height:56px;font-size:1.8rem;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.qty output{flex:1;text-align:center;font-size:2rem;font-weight:800}
+.pay,.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}.seg{grid-template-columns:repeat(3,1fr)}
+.pay button,.seg button{padding:14px;font:inherit;font-weight:700;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.pay button.on,.seg button.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.total{font-size:2rem;font-weight:800;margin:16px 0 8px;background:var(--bg);border-radius:12px;padding:12px;text-align:center}.total small{font-size:.95rem;font-weight:600;color:var(--mute)}
+.pr{width:96px;padding:8px!important}.mini.danger{background:var(--red);color:#fff}.ax{font-size:11px;fill:var(--mute)}.val{font-size:11px;font-weight:700;fill:var(--ink)}
+.legend{display:flex;gap:16px;justify-content:center;color:var(--mute);font-size:.9rem;margin-top:6px}.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px}
+.mini{padding:9px 12px;font:inherit;font-weight:700;border:0;border-radius:8px;background:var(--gold);color:var(--goldink);cursor:pointer}
+.go{width:100%;padding:16px;font:inherit;font-size:1.1rem;font-weight:800;border:0;border-radius:12px;background:var(--gold);color:var(--goldink);cursor:pointer}
+.go:disabled{opacity:.5}
+.sale{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.sale:last-child{border:0}
+.sale small{color:var(--mute);display:block}
+.void{background:none;border:0;color:var(--red);font:inherit;cursor:pointer}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.sum b{display:block;font-size:1.3rem}
+.sum span{color:var(--mute);font-size:.85rem}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%}
+.toast.show{opacity:1}.toast.err{background:var(--red);color:#fff}
+.empty{color:var(--mute);text-align:center;padding:24px 0}
+.hide{display:none}
+#pin{position:fixed;inset:0;background:rgba(5,10,20,.82);display:flex;align-items:center;justify-content:center;z-index:20}
+#pin.hide{display:none}
+.pinbox{background:var(--card);border-radius:18px;padding:20px;width:min(320px,92vw);text-align:center}
+.dots{display:flex;gap:14px;justify-content:center;margin:16px 0 6px}.dots i{width:16px;height:16px;border-radius:50%;border:2px solid var(--mute)}.dots i.f{background:var(--gold);border-color:var(--gold)}
+#pinmsg{min-height:1.4em;color:var(--red);font-weight:700}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.pad button{padding:16px;font:inherit;font-size:1.4rem;font-weight:700;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1>🥖 PPKI Bakery</h1>
+  <span class="row"><button class="mini hide" id="lockBtn">🔒 Lock</button><input type="date" id="date" aria-label="Date"></span>
+</header>
+<nav>
+  <button data-tab="sell" class="on">Sell</button>
+  <button data-tab="stock">Add bread</button>
+  <button data-tab="log">Sales today</button>
+  <button data-tab="report">Report</button>
+</nav>
+
+<main>
+  <section id="sell">
+    <div id="breads" class="grid"></div>
+    <div class="box" id="form">
+      <label for="buyer" style="margin-top:0">Buyer's name</label>
+      <input type="text" id="buyer" placeholder="e.g. Cikgu Aminah" autocomplete="off">
+      <label>How many?</label>
+      <div class="row qty">
+        <button id="minus" aria-label="Less">−</button><output id="qty">1</output><button id="plus" aria-label="More">+</button>
+      </div>
+      <label>Payment</label>
+      <div class="pay"><button data-pay="Cash" class="on">💵 Cash</button><button data-pay="QR">📱 QR</button></div>
+      <div class="total" id="total">Pick a bread above</div>
+      <button class="go" id="submit" disabled>Record sale</button>
+    </div>
+  </section>
+
+  <section id="stock" class="hide">
+    <div class="box" style="margin-top:0">
+      <label for="sname" style="margin-top:0">Bread type</label>
+      <input type="text" id="sname" list="names" placeholder="e.g. Roti Kaya">
+      <datalist id="names"></datalist>
+      <label for="sqty">Amount produced</label>
+      <input type="number" id="sqty" min="1" inputmode="numeric">
+      <label for="sprice">Price each (RM)</label>
+      <input type="number" id="sprice" min="0" step="0.10" inputmode="decimal">
+      <div style="height:16px"></div>
+      <button class="go" id="addStock">Add to today's stock</button>
+    </div>
+    <div class="box"><b>Today's stock &amp; prices</b><small style="display:block;color:var(--mute)">Change a price here for promotions. Sales already recorded keep their old price.</small><div id="stockList"></div></div>
+  </section>
+
+  <section id="log" class="hide">
+    <div class="box sum" style="margin-top:0">
+      <div><b id="tAll">RM0</b><span>Total</span></div>
+      <div><b id="tCash">RM0</b><span>Cash</span></div>
+      <div><b id="tQR">RM0</b><span>QR</span></div>
+    </div>
+    <div class="box" id="salesList"></div>
+  </section>
+
+  <section id="report" class="hide">
+    <div class="box" style="margin-top:0">
+      <b>Daily sales</b> <small style="color:var(--mute)">(ending on the date selected at the top)</small>
+      <div class="seg" style="margin:12px 0">
+        <button data-days="7">7 days</button><button data-days="14" class="on">14 days</button><button data-days="30">30 days</button>
+      </div>
+      <div id="chart"></div>
+      <div class="legend"><span><i style="background:var(--gold)"></i>Cash</span><span><i style="background:var(--teal)"></i>QR</span></div>
+    </div>
+    <div class="box sum" id="repSum"></div>
+  </section>
+</main>
+<div id="pin" class="hide" role="dialog" aria-modal="true" aria-label="Teacher PIN">
+  <div class="pinbox"><b>🔒 Teacher PIN</b>
+    <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div><div id="pinmsg"></div>
+    <div class="pad" id="pad"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, query, where, onSnapshot, getDocs, setDoc, updateDoc, runTransaction, increment }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 1) Paste your Firebase web app config here (Project settings > Your apps):
+const firebaseConfig = { apiKey: "PASTE", authDomain: "PASTE", projectId: "PASTE", appId: "PASTE" };
+// 2) Choose the teacher PIN (4 digits) and how long it stays unlocked:
+const ADMIN_PIN = "1234", LOCK_MINUTES = 10, LOCK_MS = LOCK_MINUTES * 60000;
+
+const db = getFirestore(initializeApp(firebaseConfig));
+
+const $ = id => document.getElementById(id);
+const rmf = n => "RM" + (+n).toFixed(2);
+const rm = n => "RM" + (Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, "");
+let S = { bread: [], sales: [] }, pick = null, qty = 1, pay = "Cash";
+
+$("date").value = new Date().toLocaleDateString("en-CA");
+
+function toast(msg, err) {
+  const t = $("toast"); t.textContent = msg; t.className = "toast show" + (err ? " err" : "");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.className = "toast", 2600);
+}
+
+let unsub = [], shown = "";
+const fail = () => toast("Can't connect. Check internet and Firebase setup.", true);
+
+function load() {
+  const d = $("date").value;
+  if (d === shown) return render();
+  shown = d; unsub.forEach(u => u());
+  unsub = [
+    onSnapshot(query(collection(db, "items"), where("date", "==", d)), s => {
+      S.bread = s.docs.map(x => x.data()).filter(b => b.produced > 0)
+        .map(b => ({ ...b, left: b.produced - b.sold })).sort((a, b) => a.name.localeCompare(b.name));
+      if (pick && !S.bread.find(b => b.name === pick)) pick = null;
+      render();
+    }, fail),
+    onSnapshot(query(collection(db, "sales"), where("date", "==", d)), s => {
+      S.sales = s.docs.map(x => ({ id: x.id, ...x.data() })).sort((a, b) => b.ts - a.ts);
+      render();
+    }, fail)
+  ];
+}
+
+const iid = (d, n) => d + "__" + n.replace(/\//g, "-");
+
+async function send(b) {
+  const ref = b.date ? doc(db, "items", iid(b.date, b.name || b.bread)) : null;
+  const left = x => x.produced - x.sold;
+  if (b.action === "addStock") {
+    await setDoc(ref, { date: b.date, name: b.name, price: b.price, produced: increment(b.qty), sold: increment(0) }, { merge: true });
+    return { ok: true };
+  }
+  if (b.action === "setPrice") { await updateDoc(ref, { price: b.price }); return { ok: true }; }
+  if (b.action === "removeStock") {
+    await runTransaction(db, async t => {
+      const s = await t.get(ref);
+      if (!s.exists()) throw new Error("Bread not found");
+      if (!(b.qty > 0) || b.qty > left(s.data())) throw new Error("Only " + left(s.data()) + " unsold");
+      t.update(ref, { produced: increment(-b.qty) });
+    });
+    return { ok: true };
+  }
+  if (b.action === "sale") {
+    const total = await runTransaction(db, async t => {
+      const s = await t.get(ref);
+      if (!s.exists()) throw new Error("Bread not found");
+      const x = s.data();
+      if (b.qty > left(x)) throw new Error("Only " + left(x) + " left");
+      t.update(ref, { sold: increment(b.qty) });
+      t.set(doc(collection(db, "sales")), { date: b.date, time: new Date().toTimeString().slice(0, 5), bread: b.bread,
+        qty: b.qty, total: b.qty * x.price, buyer: b.buyer, payment: b.payment, ts: Date.now() });
+      return b.qty * x.price;
+    });
+    return { ok: true, total };
+  }
+  if (b.action === "void") {
+    await runTransaction(db, async t => {
+      const sref = doc(db, "sales", b.id), s = await t.get(sref);
+      if (!s.exists()) return;
+      const x = s.data();
+      t.update(doc(db, "items", iid(x.date, x.bread)), { sold: increment(-x.qty) });
+      t.delete(sref);
+    });
+    return { ok: true };
+  }
+}
+
+function render() {
+  const b = S.bread;
+  $("breads").innerHTML = b.length ? b.map(x => `
+    <button class="bread ${pick === x.name ? "on" : ""}" data-n="${esc(x.name)}" ${x.left < 1 ? "disabled" : ""}>
+      <b>${esc(x.name)}</b><small>${rm(x.price)} each</small>
+      <div class="left">${x.left}</div><small>${x.left < 1 ? "sold out" : "left"}</small>
+    </button>`).join("") : `<div class="empty" style="grid-column:1/-1">No bread added for this date yet.<br>Teacher: use "Add bread".</div>`;
+  $("names").innerHTML = b.map(x => `<option value="${esc(x.name)}">`).join("");
+  $("stockList").innerHTML = b.length ? b.map(x => `<div class="sale" style="display:block">
+    <b>${esc(x.name)}</b><small>${x.sold}/${x.produced} sold · ${x.left} left</small>
+    <div class="row" style="margin-top:10px"><small style="margin:0">Price RM</small><input type="number" class="pr" data-pq min="0" step="0.10" inputmode="decimal" value="${x.price}" aria-label="Price of ${esc(x.name)}"><button class="mini" data-save="${esc(x.name)}">Save</button></div>
+    ${x.left > 0 ? `<div class="row" style="margin-top:8px"><small style="margin:0">Remove unsold</small><input type="number" class="pr" data-rmq min="1" max="${x.left}" value="${x.left}" inputmode="numeric" aria-label="Amount to remove"><button class="mini danger" data-remove="${esc(x.name)}">Remove</button></div>` : ""}
+  </div>`).join("") : `<div class="empty">Nothing yet</div>`;
+
+  const cur = b.find(x => x.name === pick);
+  if (cur && qty > cur.left) qty = Math.max(1, cur.left);
+  $("qty").textContent = qty;
+  $("total").innerHTML = cur ? `<small>${qty} × ${esc(cur.name)} @ ${rmf(cur.price)}</small><br>Total ${rmf(qty * cur.price)}` : "<small>Pick a bread above</small>";
+  $("submit").disabled = !cur;
+
+  const sum = p => S.sales.filter(s => !p || s.payment === p).reduce((a, s) => a + s.total, 0);
+  $("tAll").textContent = rm(sum()); $("tCash").textContent = rm(sum("Cash")); $("tQR").textContent = rm(sum("QR"));
+  $("salesList").innerHTML = S.sales.length ? S.sales.map(s => `
+    <div class="sale"><span><b>${s.qty} × ${esc(s.bread)}</b> for ${esc(s.buyer)}<small>${esc(s.time)} · ${esc(s.payment)}</small></span>
+    <span style="text-align:right"><b>${rm(s.total)}</b><br><button class="void" data-id="${s.id}">Cancel</button></span></div>`).join("") : `<div class="empty">No sales yet</div>`;
+}
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+document.querySelectorAll("nav button").forEach(btn => btn.onclick = () => (btn.dataset.tab === "sell" || unlocked()) ? go(btn) : askPin(() => go(btn)));
+function go(btn) {
+  curTab = btn.dataset.tab; if (unlocked()) until = Date.now() + LOCK_MS;
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === btn));
+  ["sell", "stock", "log", "report"].forEach(id => $(id).classList.toggle("hide", id !== btn.dataset.tab));
+  btn.dataset.tab === "report" ? loadReport() : load();
+}
+
+$("breads").onclick = e => {
+  const c = e.target.closest(".bread"); if (!c || c.disabled) return;
+  pick = c.dataset.n; qty = 1; render();
+};
+$("minus").onclick = () => { if (qty > 1) qty--; render(); };
+$("plus").onclick = () => { const c = S.bread.find(x => x.name === pick); if (c && qty < c.left) qty++; render(); };
+document.querySelectorAll(".pay button").forEach(b => b.onclick = () => {
+  pay = b.dataset.pay;
+  document.querySelectorAll(".pay button").forEach(x => x.classList.toggle("on", x === b));
+});
+
+$("submit").onclick = async () => {
+  const buyer = $("buyer").value.trim();
+  if (!buyer) return toast("Please enter the buyer's name", true);
+  $("submit").disabled = true;
+  try {
+    const r = await send({ action: "sale", date: $("date").value, buyer, bread: pick, qty, payment: pay });
+    toast("Sale recorded ✓ " + rmf(r.total) + " (" + pay + ")"); $("buyer").value = ""; qty = 1;
+  } catch (e) { toast(e.message, true); }
+  await load();
+};
+
+$("addStock").onclick = async () => {
+  const name = $("sname").value.trim(), q = +$("sqty").value, price = +$("sprice").value;
+  if (!name || q < 1 || !(price >= 0) || $("sprice").value === "") return toast("Fill in bread, amount and price", true);
+  $("addStock").disabled = true;
+  try {
+    await send({ action: "addStock", date: $("date").value, name, qty: q, price });
+    toast("Stock added ✓"); $("sname").value = $("sqty").value = $("sprice").value = "";
+  } catch (e) { toast(e.message, true); }
+  $("addStock").disabled = false; await load();
+};
+
+$("stockList").onclick = async e => {
+  const rn = e.target.dataset.remove;
+  if (rn) {
+    const q = +e.target.closest(".sale").querySelector("[data-rmq]").value;
+    if (!(q > 0)) return toast("Enter how many to remove", true);
+    if (!confirm(`Remove ${q} × ${rn} from today's stock?`)) return;
+    try { await send({ action: "removeStock", date: $("date").value, name: rn, qty: q }); toast(`Removed ${q} × ${rn}`); }
+    catch (err) { toast(err.message, true); }
+    return load();
+  }
+  const name = e.target.dataset.save; if (!name) return;
+  const price = e.target.closest(".sale").querySelector("[data-pq]").value;
+  if (price === "" || +price < 0) return toast("Enter a valid price", true);
+  try { await send({ action: "setPrice", date: $("date").value, name, price: +price }); toast(name + " is now " + rmf(price)); }
+  catch (err) { toast(err.message, true); }
+  await load();
+};
+
+$("salesList").onclick = async e => {
+  const id = e.target.dataset.id; if (!id || !confirm("Cancel this sale? The bread goes back into stock.")) return;
+  try { await send({ action: "void", id }); toast("Sale cancelled"); } catch (err) { toast(err.message, true); }
+  await load();
+};
+
+let until = 0, pinBuf = "", pinThen = null, curTab = "sell";
+const unlocked = () => Date.now() < until;
+$("pad").innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, "✕", 0, "⌫"].map(k => `<button data-k="${k}">${k}</button>`).join("");
+function pinDraw(msg) {
+  document.querySelectorAll("#dots i").forEach((d, i) => d.classList.toggle("f", i < pinBuf.length));
+  $("pinmsg").textContent = msg || "";
+}
+function askPin(then) { pinThen = then; pinBuf = ""; pinDraw(); $("pin").classList.remove("hide"); }
+function pinKey(k) {
+  if (k === "✕") return $("pin").classList.add("hide");
+  if (k === "⌫") pinBuf = pinBuf.slice(0, -1); else if (pinBuf.length < 4) pinBuf += k;
+  pinDraw();
+  if (pinBuf.length < 4) return;
+  if (pinBuf === ADMIN_PIN) { until = Date.now() + LOCK_MS; $("pin").classList.add("hide"); refreshLock(); pinThen && pinThen(); }
+  else { pinBuf = ""; setTimeout(() => pinDraw("Wrong PIN, try again"), 150); }
+}
+function refreshLock() {
+  $("lockBtn").classList.toggle("hide", !unlocked());
+  if (!unlocked() && curTab !== "sell") go(document.querySelector('nav [data-tab="sell"]'));
+}
+$("pad").onclick = e => e.target.dataset.k && pinKey(e.target.dataset.k);
+$("lockBtn").onclick = () => { until = 0; refreshLock(); };
+document.addEventListener("keydown", e => {
+  if ($("pin").classList.contains("hide")) return;
+  if (/^\d$/.test(e.key)) pinKey(e.key); else if (e.key === "Backspace") pinKey("⌫"); else if (e.key === "Escape") pinKey("✕");
+});
+document.addEventListener("pointerdown", () => { if (unlocked()) until = Date.now() + LOCK_MS; });
+setInterval(refreshLock, 10000);
+
+let days = 14;
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => {
+  days = +b.dataset.days;
+  document.querySelectorAll(".seg button").forEach(x => x.classList.toggle("on", x === b));
+  loadReport();
+});
+
+async function loadReport() {
+  try {
+    const end = new Date($("date").value + "T00:00:00"), st = new Date(end);
+    st.setDate(end.getDate() - days + 1);
+    const k = d => d.toLocaleDateString("en-CA");
+    const s = await getDocs(query(collection(db, "sales"), where("date", ">=", k(st)), where("date", "<=", k(end))));
+    const m = {};
+    s.forEach(x => { const d = x.data(), o = m[d.date] || (m[d.date] = { date: d.date, cash: 0, qr: 0 }); d.payment === "QR" ? o.qr += d.total : o.cash += d.total; });
+    drawChart(Object.values(m));
+  } catch (e) { toast("Can't load report.", true); }
+}
+
+function drawChart(data) {
+  const map = {}; data.forEach(d => map[d.date] = d);
+  const end = new Date($("date").value + "T00:00:00"), rows = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const dt = new Date(end); dt.setDate(end.getDate() - i);
+    const k = dt.toLocaleDateString("en-CA"), d = map[k] || { cash: 0, qr: 0 };
+    rows.push({ k, dd: dt.getDate() + "/" + (dt.getMonth() + 1), cash: d.cash, qr: d.qr, tot: d.cash + d.qr });
+  }
+  const mx = Math.max(1, ...rows.map(r => r.tot)), rough = mx / 4, mag = Math.pow(10, Math.floor(Math.log10(rough)));
+  const step = [1, 2, 5, 10].find(m => m * mag >= rough) * mag, top = step * Math.ceil(mx / step);
+  const W = 420, H = 280, L = 46, R = 8, T = 18, B = 34, pw = W - L - R, ph = H - T - B, bw = pw / rows.length;
+  const y = v => T + ph - v / top * ph, every = days > 14 ? 5 : days > 7 ? 2 : 1;
+  let s = "";
+  for (let v = 0; v <= top + 1e-9; v += step)
+    s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" class="ax">${+v.toFixed(2)}</text>`;
+  rows.forEach((r, i) => {
+    const x = L + i * bw + bw * .15, w = bw * .7;
+    s += `<g><title>${r.k}: ${rmf(r.tot)} (Cash ${rmf(r.cash)}, QR ${rmf(r.qr)})</title>`;
+    if (r.cash) s += `<rect x="${x}" y="${y(r.cash)}" width="${w}" height="${y(0) - y(r.cash)}" fill="var(--gold)"/>`;
+    if (r.qr) s += `<rect x="${x}" y="${y(r.tot)}" width="${w}" height="${y(r.cash) - y(r.tot)}" fill="var(--teal)"/>`;
+    if (r.tot && days <= 14) s += `<text x="${x + w / 2}" y="${y(r.tot) - 4}" text-anchor="middle" class="val">${Math.round(r.tot * 10) / 10}</text>`;
+    if ((rows.length - 1 - i) % every === 0) s += `<text x="${x + w / 2}" y="${H - B + 16}" text-anchor="middle" class="ax">${r.dd}</text>`;
+    s += `</g>`;
+  });
+  $("chart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Bar chart of daily sales in RM">${s}</svg>`;
+  const total = rows.reduce((a, r) => a + r.tot, 0), best = rows.reduce((a, r) => r.tot > a.tot ? r : a, rows[0]);
+  $("repSum").innerHTML = total ? `<div><b>${rmf(total)}</b><span>Total</span></div><div><b>${rmf(total / days)}</b><span>Daily average</span></div><div><b>${rmf(best.tot)}</b><span>Best day (${best.dd})</span></div>` : `<div class="empty" style="grid-column:1/-1">No sales in this period</div>`;
+}
+
+$("date").onchange = () => { load(); if (!$("report").classList.contains("hide")) loadReport(); };
+load();
+</script>
+</body>
+</html>
