@@ -63,7 +63,7 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border:
 <body>
 <header>
   <div class="brand"><img class="logo" src="../logo.jpeg" alt="SMK Tansau logo" onerror="this.style.display='none'"><h1>PPKI SMK Tansau</h1></div>
-  <span class="row"><button class="mini hide" id="lockBtn">🔒 Lock</button><input type="date" id="date" aria-label="Date"></span>
+  <span class="row"><button class="mini hide" id="pinBtn">🔑 Change PIN</button><button class="mini hide" id="lockBtn">🔒 Lock</button><input type="date" id="date" aria-label="Date"></span>
 </header>
 <nav>
   <button data-tab="sell" class="on">Sell</button>
@@ -126,7 +126,7 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border:
   </section>
 </main>
 <div id="pin" class="hide" role="dialog" aria-modal="true" aria-label="Teacher PIN">
-  <div class="pinbox"><b>🔒 Teacher PIN</b>
+  <div class="pinbox"><b id="pintitle">🔒 Teacher PIN</b>
     <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div><div id="pinmsg"></div>
     <div class="pad" id="pad"></div>
   </div>
@@ -135,7 +135,7 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border:
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, doc, query, where, onSnapshot, getDocs, setDoc, updateDoc, runTransaction, increment }
+import { getFirestore, collection, doc, query, where, onSnapshot, getDocs, getDoc, setDoc, updateDoc, runTransaction, increment }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // 1) Paste your Firebase web app config here (Project settings > Your apps):
@@ -148,7 +148,7 @@ const firebaseConfig = {
     appId: "1:182741287982:web:6c447d2367fdc5f7580bbf",
     measurementId: "G-Z54ZSQBWXF"
 };
-// 2) Choose the teacher PIN (4 digits) and how long it stays unlocked:
+// 2) Starting teacher PIN (the teacher can change it in the app) and how long it stays unlocked:
 const ADMIN_PIN = "1234", LOCK_MINUTES = 10, LOCK_MS = LOCK_MINUTES * 60000;
 
 const db = getFirestore(initializeApp(firebaseConfig));
@@ -331,20 +331,40 @@ function pinDraw(msg) {
   document.querySelectorAll("#dots i").forEach((d, i) => d.classList.toggle("f", i < pinBuf.length));
   $("pinmsg").textContent = msg || "";
 }
-function askPin(then) { pinThen = then; pinBuf = ""; pinDraw(); $("pin").classList.remove("hide"); }
-function pinKey(k) {
+let pinMode = "unlock", newPin = "", checking = false;
+const getPin = async () => { const s = await getDoc(doc(db, "config", "admin")); return s.exists() ? String(s.data().pin) : ADMIN_PIN; };
+const pinOpen = (title, mode) => { pinMode = mode; pinBuf = ""; $("pintitle").textContent = title; pinDraw(); $("pin").classList.remove("hide"); };
+function askPin(then) { pinThen = then; pinOpen("🔒 Teacher PIN", "unlock"); }
+function askNew() { newPin = ""; pinOpen("🔑 Enter new PIN", "new"); }
+async function pinKey(k) {
+  if (checking) return;
   if (k === "✕") return $("pin").classList.add("hide");
   if (k === "⌫") pinBuf = pinBuf.slice(0, -1); else if (pinBuf.length < 4) pinBuf += k;
   pinDraw();
   if (pinBuf.length < 4) return;
-  if (pinBuf === ADMIN_PIN) { until = Date.now() + LOCK_MS; $("pin").classList.add("hide"); refreshLock(); pinThen && pinThen(); }
-  else { pinBuf = ""; setTimeout(() => pinDraw("Wrong PIN, try again"), 150); }
+  if (pinMode === "new") { newPin = pinBuf; return pinOpen("🔑 Re-enter new PIN", "confirm"); }
+  if (pinMode === "confirm" && pinBuf !== newPin) { pinOpen("🔑 Enter new PIN", "new"); return pinDraw("PINs didn't match, try again"); }
+  const tryPin = pinBuf; checking = true; pinDraw("Checking…");
+  try {
+    if (pinMode === "confirm") {
+      await setDoc(doc(db, "config", "admin"), { pin: newPin });
+      $("pin").classList.add("hide"); toast("PIN changed ✓");
+    } else {
+      if (tryPin !== await getPin()) throw new Error("Wrong PIN");
+      until = Date.now() + LOCK_MS;
+      $("pin").classList.add("hide"); refreshLock(); pinThen && pinThen();
+    }
+  } catch (e) {
+    pinBuf = ""; pinDraw(e.message === "Wrong PIN" ? "Wrong PIN, try again" : "Can't reach the server. Try again.");
+  }
+  checking = false;
 }
 function refreshLock() {
-  $("lockBtn").classList.toggle("hide", !unlocked());
+  $("lockBtn").classList.toggle("hide", !unlocked()); $("pinBtn").classList.toggle("hide", !unlocked());
   if (!unlocked() && curTab !== "sell") go(document.querySelector('nav [data-tab="sell"]'));
 }
 $("pad").onclick = e => e.target.dataset.k && pinKey(e.target.dataset.k);
+$("pinBtn").onclick = askNew;
 $("lockBtn").onclick = () => { until = 0; refreshLock(); };
 document.addEventListener("keydown", e => {
   if ($("pin").classList.contains("hide")) return;
