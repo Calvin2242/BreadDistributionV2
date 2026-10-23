@@ -138,8 +138,17 @@ import { getFirestore, collection, doc, query, where, onSnapshot, getDocs, setDo
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // 1) Paste your Firebase web app config here (Project settings > Your apps):
-const firebaseConfig = { apiKey: "PASTE", authDomain: "PASTE", projectId: "PASTE", appId: "PASTE" };
-// 2) Choose the teacher PIN (4 digits) and how long it stays unlocked:
+const firebaseConfig = { 
+    apiKey: "AIzaSyBkf32RrnY8Z4TIVUdVhkKCH49NBBjlvZE",
+    authDomain: "breaddistribution-ppki-smkt.firebaseapp.com",
+    projectId: "breaddistribution-ppki-smkt",
+    storageBucket: "breaddistribution-ppki-smkt.firebasestorage.app",
+    messagingSenderId: "182741287982",
+    appId: "1:182741287982:web:6c447d2367fdc5f7580bbf",
+    measurementId: "G-Z54ZSQBWXF"
+};
+
+// 2) PIN HERE: Change this to your own 4-digit PIN. Students cannot see it, but teachers can change it in the code.
 const ADMIN_PIN = "1234", LOCK_MINUTES = 10, LOCK_MS = LOCK_MINUTES * 60000;
 
 const db = getFirestore(initializeApp(firebaseConfig));
